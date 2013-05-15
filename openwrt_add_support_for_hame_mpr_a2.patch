@@ -1,0 +1,307 @@
+Index: target/linux/ramips/rt305x/profiles/hame.mk
+===================================================================
+--- target/linux/ramips/rt305x/profiles/hame.mk	(revision 0)
++++ target/linux/ramips/rt305x/profiles/hame.mk	(revision 0)
+@@ -0,0 +1,21 @@
++#
++# Copyright (C) 2013 OpenWrt.org
++#
++# This is free software, licensed under the GNU General Public License v2.
++# See /LICENSE for more information.
++#
++
++define Profile/MPRA2
++	NAME:=HAME MPR-A2
++	PACKAGES:=\
++		kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-netdev kmod-ledtrig-timer \
++		kmod-usb-acm kmod-usb-net kmod-usb-net-asix kmod-usb-net-rndis kmod-usb-serial kmod-usb-serial-option \
++		usb-modeswitch usb-modeswitch-data comgt
++endef
++
++define Profile/MPRA2/Description
++	Package set for HAME MPR-A2 board
++endef
++
++$(eval $(call Profile,MPRA2))
++
+Index: target/linux/ramips/base-files/lib/preinit/07_set_preinit_iface_ramips
+===================================================================
+--- target/linux/ramips/base-files/lib/preinit/07_set_preinit_iface_ramips	(revision 36636)
++++ target/linux/ramips/base-files/lib/preinit/07_set_preinit_iface_ramips	(working copy)
+@@ -6,6 +6,18 @@
+ . /lib/ramips.sh
+ 
+ ramips_set_preinit_iface() {
++	local board=$(ramips_board_name)
++
++	case "$board" in
++	mpr-a2)
++		#TODO
++		# Ralink ethernet driver cannot re-open ethernet if it is opened during preinit and then closed.
++		# Looks like Ralink ethernet driver has a problem.
++		# Temporary solution is not to open ethernet during preinit.
++		return 0
++		;;
++	esac
++
+ 	ifname=eth0
+ }
+ 
+Index: target/linux/ramips/base-files/lib/preinit/06_set_iface_mac
+===================================================================
+--- target/linux/ramips/base-files/lib/preinit/06_set_iface_mac	(revision 36636)
++++ target/linux/ramips/base-files/lib/preinit/06_set_iface_mac	(working copy)
+@@ -26,6 +26,7 @@
+ 	dir-620-a1 |\
+ 	esr-9753 |\
+ 	freestation5 |\
++	mpr-a2 | \
+ 	nw718 |\
+ 	psr-680w |\
+ 	rt-n56u |\
+Index: target/linux/ramips/base-files/lib/ramips.sh
+===================================================================
+--- target/linux/ramips/base-files/lib/ramips.sh	(revision 36636)
++++ target/linux/ramips/base-files/lib/ramips.sh	(working copy)
+@@ -112,6 +112,9 @@
+ 	*"MoFi Network MOFI3500-3GN")
+ 		name="mofi3500-3gn"
+ 		;;
++	*"HAME MPR-A2")
++ 		name="mpr-a2"
++ 		;;
+ 	*"NBG-419N")
+ 		name="nbg-419n"
+ 		;;
+Index: target/linux/ramips/base-files/lib/upgrade/platform.sh
+===================================================================
+--- target/linux/ramips/base-files/lib/upgrade/platform.sh	(revision 36636)
++++ target/linux/ramips/base-files/lib/upgrade/platform.sh	(working copy)
+@@ -42,6 +42,7 @@
+ 	freestation5 | \
+ 	hw550-3g | \
+ 	mofi3500-3gn | \
++	mpr-a2 | \
+ 	mzk-w300nh2 | \
+ 	nbg-419n | \
+ 	nw718 | \
+Index: target/linux/ramips/base-files/etc/hotplug.d/firmware/10-rt2x00-eeprom
+===================================================================
+--- target/linux/ramips/base-files/etc/hotplug.d/firmware/10-rt2x00-eeprom	(revision 36636)
++++ target/linux/ramips/base-files/etc/hotplug.d/firmware/10-rt2x00-eeprom	(working copy)
+@@ -76,6 +76,7 @@
+ 	freestation5 | \
+ 	hw550-3g | \
+ 	mofi3500-3gn | \
++	mpr-a2 | \
+ 	pwh2004 | \
+ 	nbg-419n | \
+ 	nw718 | \
+Index: target/linux/ramips/base-files/etc/uci-defaults/01_leds
+===================================================================
+--- target/linux/ramips/base-files/etc/uci-defaults/01_leds	(revision 36636)
++++ target/linux/ramips/base-files/etc/uci-defaults/01_leds	(working copy)
+@@ -94,6 +94,9 @@
+ 	mofi3500-3gn)
+ 		set_usb_led "mofi3500-3gn:green:usb"
+ 		;;
++	mpr-a2)
++		set_wifi_led "mpr-a2:blue:system"
++		;;
+ 	mzk-w300nh2)
+ 		set_wifi_led "mzkw300nh2:amber:wlan"
+ 		;;
+Index: target/linux/ramips/base-files/etc/uci-defaults/02_network
+===================================================================
+--- target/linux/ramips/base-files/etc/uci-defaults/02_network	(revision 36636)
++++ target/linux/ramips/base-files/etc/uci-defaults/02_network	(working copy)
+@@ -172,6 +172,7 @@
+ 	broadway | \
+ 	dir-620-d1 | \
+ 	f5d8235-v1 | \
++	mpr-a2 | \
+ 	mzk-w300nh2 | \
+ 	nw718 | \
+ 	psr-680w | \
+Index: target/linux/ramips/base-files/etc/diag.sh
+===================================================================
+--- target/linux/ramips/base-files/etc/diag.sh	(revision 36636)
++++ target/linux/ramips/base-files/etc/diag.sh	(working copy)
+@@ -55,6 +55,9 @@
+ 	mofi3500-3gn)
+ 		status_led="mofi3500-3gn:green:status"
+ 		;;
++	mpr-a2)
++		status_led="mpr-a2:red:power"
++		;;
+ 	nbg-419n)
+ 		status_led="nbg-419n:green:power"
+ 		;;
+Index: target/linux/ramips/dts/MPRA2.dts
+===================================================================
+--- target/linux/ramips/dts/MPRA2.dts	(revision 0)
++++ target/linux/ramips/dts/MPRA2.dts	(revision 0)
+@@ -0,0 +1,121 @@
++/dts-v1/;
++
++/include/ "rt5350.dtsi"
++
++/ {
++	compatible = "MPRA2", "ralink,rt5350-soc";
++	model = "HAME MPR-A2";
++
++	memory@0 {
++		reg = <0x0 0x2000000>;
++	};
++
++	palmbus@10000000 {
++		sysc@0 {
++			ralink,pinmux = "i2c", "spi", "uartlite", "mdio", "sdram", "rgmii";
++			ralink,gpiomux = "jtag";
++			ralink,uartmux = "gpio";
++			ralink,wdtmux = <1>;
++		};
++
++		gpio0: gpio@600 {
++			status = "okay";
++		};
++
++		spi@b00 {
++			status = "okay";
++			m25p80@0 {
++				#address-cells = <1>;
++				#size-cells = <1>;
++				compatible = "s25fl064k";
++				reg = <0 0>;
++				linux,modalias = "m25p80", "s25fl064k";
++				spi-max-frequency = <10000000>;
++
++		partition@0 {
++			label = "u-boot";
++			reg = <0x0 0x30000>;
++			read-only;
++		};
++
++		partition@30000 {
++			label = "u-boot-env";
++			reg = <0x30000 0x10000>;
++			read-only;
++		};
++
++		factory: partition@40000 {
++			label = "factory";
++			reg = <0x40000 0x10000>;
++			read-only;
++		};
++
++		partition@50000 {
++			label = "firmware";
++			reg = <0x50000 0x7b0000>;
++		};
++			};
++		};
++	};
++
++	ethernet@10100000 {
++		status = "okay";
++	};
++
++	esw@10110000 {
++		status = "okay";
++		ralink,portmap = <0x2f>;
++	};
++
++	wmac@10180000 {
++		status = "okay";
++	};
++
++	ehci@101c0000 {
++		status = "okay";
++	};
++
++	ohci@101c1000 {
++		status = "okay";
++	};
++
++	gpio-leds {
++		compatible = "gpio-leds";
++		system {
++			label = "mpr-a2:blue:system";
++			gpios = <&gpio0 20 1>;
++		};
++		power {
++			label = "mpr-a2:red:power";
++			gpios = <&gpio0 17 1>;
++		};
++	};
++
++	gpio-keys-polled {
++		compatible = "gpio-keys-polled";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		poll-interval = <20>;
++		wps {
++			label = "reset";
++			gpios = <&gpio0 0 1>;
++			linux,code = <0x198>;
++		};
++	};
++
++	gpio_export {
++		compatible = "gpio-export";
++		#size-cells = <0>;
++
++		usb {
++			gpio-export,name = "usb";
++			gpio-export,output = <1>;
++			gpios = <&gpio0 7 0>;
++		};
++		root_hub {
++			gpio-export,name = "root_hub";
++			gpio-export,output = <1>;
++			gpios = <&gpio0 12 0>;
++		};
++	};
++};
+Index: target/linux/ramips/image/Makefile
+===================================================================
+--- target/linux/ramips/image/Makefile	(revision 36636)
++++ target/linux/ramips/image/Makefile	(working copy)
+@@ -93,7 +93,7 @@
+ endef
+ 
+ define BuildFirmware/OF/initramfs
+-	$(call MkImageLzmaDtb,$(2),$(3))
++	$(call MkImageLzmaDtb,$(2),$(3),$(4))
+ 	$(CP) $(KDIR)/vmlinux-$(2).uImage $(call imgname,$(1),$(2))-uImage.bin
+ endef
+ 
+@@ -113,8 +113,8 @@
+ # $(2) = lowercase board name
+ # $(3) = dts file
+ ralink_default_fw_size_8M=8060928
+-BuildFirmware/Default8M/squashfs=$(call BuildFirmware/OF,$(1),$(2),$(3),$(ralink_default_fw_size_8M))
+-BuildFirmware/Default8M/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3))
++BuildFirmware/Default8M/squashfs=$(call BuildFirmware/OF,$(1),$(2),$(3),$(ralink_default_fw_size_8M),$(4))
++BuildFirmware/Default8M/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3),$(4))
+ 
+ # Build images for a custom sized flash layout
+ # $(1) = squashfs/initramfs
+@@ -330,6 +330,9 @@
+ 
+ Image/Build/Profile/MOFI3500-3GN=$(call BuildFirmware/Default8M/$(1),$(1),mofi3500-3gn,MOFI3500-3GN)
+ 
++# Kernel name should be "Linux Kernel Image" to make the OpenWrt image installable from factory Web UI
++Image/Build/Profile/MPRA2=$(call BuildFirmware/Default8M/$(1),$(1),mpr-a2,MPRA2,Linux Kernel Image)
++
+ Image/Build/Profile/NBG-419N=$(call BuildFirmware/Default4M/$(1),$(1),nbg-419n,NBG-419N)
+ 
+ Image/Build/Profile/MZKW300NH2=$(call BuildFirmware/Edimax/$(1),$(1),mzk-w300nh2,MZK-W300NH2,$(mzkw300nh2_mtd_size),CSYS,RN52,0x50000,0xc0000)
+@@ -456,6 +459,7 @@
+ 	$(call Image/Build/Profile/FREESTATION5,$(1))
+ 	$(call Image/Build/Profile/HW550-3G,$(1))
+ 	$(call Image/Build/Profile/MOFI3500-3GN,$(1))
++	$(call Image/Build/Profile/MPRA2,$(1))
+ 	$(call Image/Build/Profile/MZKW300NH2,$(1))
+ 	$(call Image/Build/Profile/NBG-419N,$(1))
+ 	$(call Image/Build/Profile/NW718,$(1))
